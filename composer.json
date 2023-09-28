@@ -1,0 +1,24 @@
+{
+    "name": "plugse/ctrl",
+    "description": "Launch controllers by registred routes",
+    "type": "library",
+    "require": {
+        "plugse/fileandpath": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Plugse\\Ctrl\\": "src/",
+            "Plugse\\Test\\": "test/"
+        }
+    },
+    "authors": [
+        {
+            "name": "José Hélio",
+            "email": "jose.helio@gmail.com"
+        }
+    ]
+}
