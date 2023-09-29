@@ -1,8 +1,8 @@
 <?php
 
+use Plugse\Ctrl\http\Request;
 use PHPUnit\Framework\TestCase;
 use Plugse\Ctrl\helpers\Crypto;
-use Plugse\Test\files\MakeRequest;
 use Plugse\Ctrl\http\routing\Route;
 use Plugse\Ctrl\http\routing\Routes;
 use Plugse\Ctrl\errors\FileNotFoundError;
@@ -13,15 +13,15 @@ use Plugse\Ctrl\http\routing\RouteCollection;
 use Plugse\Ctrl\errors\PermitionIncorrectError;
 use Plugse\Ctrl\http\routing\ControllerStarter;
 use Plugse\Ctrl\errors\RouteNotImplementedError;
-use Plugse\Ctrl\http\Request;
 
 class ControllerStarterTest extends TestCase
 {
-    private $routes;
+    private $publicRoutes;
+    private $privateRoutes;
 
     protected function setUp(): void
     {
-        $this->routes = [
+        $this->publicRoutes = [
             'testPublic' => [
                 [
                     'method' => 'GET',
@@ -59,6 +59,8 @@ class ControllerStarterTest extends TestCase
                     ],
                 ],
             ],
+        ];
+        $this->privateRoutes = [
             'testPrivate' => [
                 [
                     'method' => 'GET',
@@ -122,9 +124,9 @@ class ControllerStarterTest extends TestCase
         return $request;
     }
 
-    public function testStartController()
+    public function testStartPublicRoutes()
     {
-        foreach ($this->routes as $controller => $methods) {
+        foreach ($this->publicRoutes as $controller => $methods) {
             $routesCollection = new RouteCollection($controller);
             foreach ($methods as $method) {
                 $starter = new ControllerStarter(
@@ -145,152 +147,165 @@ class ControllerStarterTest extends TestCase
         }
     }
 
-    // public function testStartControllerPrivateRoute()
-    // {
-    //     $jwt = Crypto::CreateJWT(123);
-    //     $starter = new ControllerStarter(
-    //         $this->requestFactory->createRequest([
-    //             'controller' => 'foo',
-    //             'method' => 'POST',
-    //             'header' => [
-    //                 'Authorization' => "Bearer {$jwt['token']}",
-    //             ],
-    //         ]),
-    //         new Routes(new Route('foo', 'POST', 'create', true)),
-    //         './src/testers/controllers/'
-    //     );
-    //     $result = $starter->execute('Tcc\\Api\\Testers\\Controllers');
+    public function testStartPrivateRoutes()
+    {
+        foreach ($this->privateRoutes as $controller => $methods) {
+            $routesCollection = new RouteCollection(
+                $controller,
+                ['index', 'create', 'update', 'cancel', 'delete']
+            );
 
-    //     $this->assertJson($result);
-    // }
+            foreach ($methods as $method) {
+                $jwt = Crypto::CreateJWT(123);
+                $starter = new ControllerStarter(
+                    $this->getRequest([
+                        'controller' => $controller,
+                        'method' => $method['method'],
+                        'header' => [
+                            'Authorization' => "Bearer {$jwt['token']}",
+                        ],
+                    ]),
+                    $routesCollection->routes
+                );
 
-    // /**
-    //  * @expectedException RouteNotImplementedError
-    //  */
-    // public function testFailControllerName()
-    // {
-    //     $this->expectException(RouteNotImplementedError::class);
+                $result = $starter->execute();
+                $resultObject = json_decode($result);
 
-    //     $factory = new MakeRequest();
-    //     $starter = new ControllerStarter(
-    //         $factory->createRequest([
-    //             'controller' => 'flaus',
-    //             'method' => 'GET',
-    //         ]),
-    //         new Routes(new Route('foo')),
-    //         './src/testers/controllers/'
-    //     );
-    //     $starter->execute('Tcc\\Api\\Testers\\Controllers');
-    // }
+                $this->assertJson($result);
+                $this->assertEquals($method['expectation']['message'], $resultObject->message);
+                $this->assertEquals($method['expectation']['statusCode'], http_response_code());
+            }
+        }
+    }
 
-    // /**
-    //  * @expectedException FileNotFoundError
-    //  */
-    // public function testFailControllerFile()
-    // {
-    //     $this->expectException(FileNotFoundError::class);
+    /**
+     * @expectedException RouteNotImplementedError
+     */
+    public function testFailControllerName()
+    {
+        $this->expectException(RouteNotImplementedError::class);
 
-    //     $factory = new MakeRequest();
-    //     $starter = new ControllerStarter(
-    //         $factory->createRequest([
-    //             'controller' => 'bar',
-    //             'method' => 'GET',
-    //         ]),
-    //         new Routes(new Route('bar')),
-    //         './src/testers/controllers/'
-    //     );
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => 'flaus',
+            ]),
+            new Routes(new Route('foo')),
+            './src/testers/controllers/'
+        );
+        $starter->execute();
+    }
 
-    //     $starter->execute('Tcc\\Api\\Testers\\Controllers');
-    // }
+    /**
+     * @expectedException FileNotFoundError
+     */
+    public function testFailControllerFile()
+    {
+        $this->expectException(FileNotFoundError::class);
 
-    // /**
-    //  * @expectedException ClassNotFoundError
-    //  */
-    // public function testFailControllerClass()
-    // {
-    //     $this->expectException(ClassNotFoundError::class);
+        $controller = 'test';
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => $controller,
+            ]),
+            (new RouteCollection($controller))->routes
+        );
 
-    //     $factory = new MakeRequest();
-    //     $starter = new ControllerStarter(
-    //         $factory->createRequest([
-    //             'controller' => 'fooFail',
-    //             'method' => 'GET',
-    //         ]),
-    //         new Routes(
-    //             new Route('fooFail')
-    //         ),
-    //         './src/testers/controllers/'
-    //     );
+        $starter->execute();
+    }
 
-    //     $starter->execute('Tcc\\Api\\Testers\\Controllers');
-    // }
+    /**
+     * @expectedException ClassNotFoundError
+     */
+    public function testFailControllerClass()
+    {
+        $this->expectException(ClassNotFoundError::class);
 
-    // /**
-    //  * @expectedException PermitionDeniedError
-    //  */
-    // public function testFailPermitionDenied()
-    // {
-    //     $this->expectException(PermitionDeniedError::class);
+        $controller = 'testNoClass';
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => $controller,
+            ]),
+            (new RouteCollection($controller))->routes
+        );
 
-    //     $starter = new ControllerStarter(
-    //         $this->requestFactory->createRequest([
-    //             'controller' => 'foo',
-    //             'method' => 'POST',
-    //         ]),
-    //         new Routes(new Route('foo', 'POST', 'create', true)),
-    //         './src/testers/controllers/'
-    //     );
-    //     $result = $starter->execute('Tcc\\Api\\Testers\\Controllers');
+        $starter->execute();
+    }
 
-    //     $this->assertIsArray($result);
-    // }
+    /**
+     * @expectedException PermitionDeniedError
+     */
+    public function testFailPermitionDenied()
+    {
+        $this->expectException(PermitionDeniedError::class);
 
-    // /**
-    //  * @expectedException PermitionIncorrectError
-    //  */
-    // public function testFailPermitionIncorrect()
-    // {
-    //     $this->expectException(PermitionIncorrectError::class);
+        $controller = 'testPrivate';
+        $routesCollection = new RouteCollection(
+            $controller,
+            ['index', 'create', 'update', 'cancel', 'delete']
+        );
 
-    //     $jwt = Crypto::CreateJWT(123);
-    //     $starter = new ControllerStarter(
-    //         $this->requestFactory->createRequest([
-    //             'controller' => 'foo',
-    //             'method' => 'POST',
-    //             'header' => [
-    //                 'Authorization' => "Berer {$jwt['token']}",
-    //             ],
-    //         ]),
-    //         new Routes(new Route('foo', 'POST', 'create', true)),
-    //         './src/testers/controllers/'
-    //     );
-    //     $result = $starter->execute('Tcc\\Api\\Testers\\Controllers');
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => $controller,
+            ]),
+            $routesCollection->routes
+        );
 
-    //     $this->assertIsArray($result);
-    // }
+        $starter->execute();
+    }
 
-    // /**
-    //  * @expectedException TokenExpiredError
-    //  */
-    // public function testFailTokenExpired()
-    // {
-    //     $this->expectException(TokenExpiredError::class);
+    /**
+     * @expectedException PermitionIncorrectError
+     */
+    public function testFailPermitionIncorrect()
+    {
+        $this->expectException(PermitionIncorrectError::class);
 
-    //     $expiration = Crypto::getTimestamp('2022-05-10');
-    //     $jwt = Crypto::CreateJWT(123, $expiration);
-    //     $starter = new ControllerStarter(
-    //         $this->requestFactory->createRequest([
-    //             'controller' => 'foo',
-    //             'method' => 'POST',
-    //             'header' => [
-    //                 'Authorization' => "Bearer {$jwt['token']}",
-    //             ],
-    //         ]),
-    //         new Routes(new Route('foo', 'POST', 'create', true)),
-    //         './src/testers/controllers/'
-    //     );
-    //     $result = $starter->execute('Tcc\\Api\\Testers\\Controllers');
+        $jwt = Crypto::CreateJWT(123);
+        $controller = 'testPrivate';
+        $routesCollection = new RouteCollection(
+            $controller,
+            ['index', 'create', 'update', 'cancel', 'delete']
+        );
 
-    //     $this->assertIsArray($result);
-    // }
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => $controller,
+                'header' => [
+                    'Authorization' => "Berer {$jwt['token']}",
+                ],
+            ]),
+            $routesCollection->routes
+        );
+
+        $starter->execute();
+    }
+
+    /**
+     * @expectedException TokenExpiredError
+     */
+    public function testFailTokenExpired()
+    {
+        $this->expectException(TokenExpiredError::class);
+
+        $expiration = Crypto::getTimestamp('2022-05-10');
+        $jwt = Crypto::CreateJWT(123, $expiration);
+        $controller = 'testPrivate';
+        $routesCollection = new RouteCollection(
+            $controller,
+            ['index', 'create', 'update', 'cancel', 'delete']
+        );
+
+        $starter = new ControllerStarter(
+            $this->getRequest([
+                'controller' => $controller,
+                'header' => [
+                    'Authorization' => "Bearer {$jwt['token']}",
+                ],
+            ]),
+            $routesCollection->routes
+        );
+
+        $starter->execute();
+    }
 }
