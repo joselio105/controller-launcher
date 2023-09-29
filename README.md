@@ -23,7 +23,7 @@ Instale File and Path usando o **Composer**
 ### Diretamente pelo Composer
 
 ```bash
-  composer require plugse/fileandpath
+  composer require plugse/ctrl
 ```
 
 ### Alterando o arquivo composer.json
@@ -34,7 +34,7 @@ Instale File and Path usando o **Composer**
 ```json
 {
     "require": {
-        "plugse/fileandpath": "^1"
+        "plugse/ctrl": "^1"
     }
 }
 ```

@@ -2,7 +2,7 @@
     "name": "plugse/ctrl",
     "description": "Launch controllers by registred routes",
     "type": "library",
-    "keywords": ["write","read", "path", "file", "env", "log", "json"],
+    "keywords": ["http","request", "response", "controller", "route"],
     "homepage": "https://github.com/joselio105/controller-launcher",
     "version": "1.0.0",
     "require": {
