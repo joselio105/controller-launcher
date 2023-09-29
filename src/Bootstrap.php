@@ -25,7 +25,11 @@ class Bootstrap
         header('Access-Control-Max-Age: 86400');
     }
 
-    public function getResponse()
+    /**
+     * Retorna o resultado do método executado na classe controller definida na rota.
+     * @return string
+     */
+    public function getResponse(): string
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

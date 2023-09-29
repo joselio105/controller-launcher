@@ -12,6 +12,12 @@ use Plugse\Ctrl\helpers\Crypto;
 use Plugse\Ctrl\http\Request;
 use Plugse\Fp\Json;
 
+/**
+ * Define as rotas e requisições para executar o método da classe controller definido na rota
+ * @param Request $request - Objeto com os parâmetros definidos na requisição http.
+ * @param Routes $routes - Listagem das rotas definidas na aplicação.
+ * @param string $controllersPath - Caminho para a pasta onde se encontram as classes controller. Valor padão: './src/infra/http/controllers/' .
+ */
 class ControllerStarter
 {
     public $routes;
@@ -32,6 +38,11 @@ class ControllerStarter
         $this->request = $request;
     }
 
+    /**
+     * Executa o método da classe controller definido na rota
+     * @param string $namespace - Define um namespace para as classes controller. Valor padrão: ''.
+     * @return string
+     */
     public function execute(string $namespace = ''): string
     {
         $this->setControllerName();

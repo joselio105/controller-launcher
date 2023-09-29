@@ -2,6 +2,9 @@
 
 namespace Plugse\Ctrl\http;
 
+/**
+ * Define os parâmetros recebidos por uma requisição HTTP
+ */
 class Request
 {
     private $queryString;

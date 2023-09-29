@@ -4,6 +4,10 @@ namespace Plugse\Ctrl\http\routing;
 
 use Plugse\Ctrl\errors\FileNotFoundError;
 
+/**
+ * Gerencia o comportamento das rotas definidas.
+ * @param string $routesPath - Caminho para onde se localizam os arquivos de definição das rotas. Valor padrão ./src/infra/http/routes/ .
+ */
 class RoutesManager
 {
     private $routes;
@@ -17,11 +21,19 @@ class RoutesManager
         $this->setRoutes('private');
     }
 
+    /**
+     * Lista as rotas definidas
+     * @return Routes
+     */
     public function getRoutes(): Routes
     {
         return $this->routes;
     }
 
+    /**
+     * Define as rotas
+     * @param string $type - Define se a rota é pública (public) ou privada (private).
+     */
     public function setRoutes(string $type)
     {
         $routesFile = $this->routesPath . "{$type}.php";

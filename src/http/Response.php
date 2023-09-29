@@ -2,6 +2,10 @@
 
 namespace Plugse\Ctrl\http;
 
+/**
+ * Prepara o retorno do resultado do método executado pela classe controller.
+ * @param string | array | Entity
+ */
 class Response
 {
     private $value;
