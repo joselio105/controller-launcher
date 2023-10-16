@@ -2,16 +2,15 @@
 
 namespace Plugse\Ctrl\helpers;
 
-use DateInterval;
 use DateTime;
-use Plugse\Ctrl\errors\TokenDecodeError;
+use DateInterval;
 use Plugse\Ctrl\http\Request;
-use Plugse\Fp\Env;
+use Plugse\Ctrl\errors\TokenDecodeError;
 
 class Crypto
 {
     private const BASE64_PADDING_LENGTH = 4;
-    private const SECRET_KEY_FILE = './config/crypto.env';
+    private const SECRET_KEY_FILE = './settings.php';
     private const TOKEN_EXPIRATION = 'PT1H';
 
     public static function hash($value)
@@ -93,19 +92,29 @@ class Crypto
     private static function getSecret()
     {
         if (file_exists(self::SECRET_KEY_FILE)) {
-            $key = Env::read(self::SECRET_KEY_FILE);
-
-            return $key['secret'];
-        } else {
-            return self::generateSecret();
+            $settings = require_once self::SECRET_KEY_FILE;
+            if (key_exists('cryptoSecret', $settings)) {
+                return $settings['cryptoSecret'];
+            }
         }
+
+        return self::generateSecret();
     }
 
     private static function generateSecret()
     {
+        if (!file_exists(self::SECRET_KEY_FILE)) {
+            file_put_contents(self::SECRET_KEY_FILE, '');
+        }
+        $settings = require_once self::SECRET_KEY_FILE;
+
         $key = $_SERVER['SCRIPT_FILENAME'] . self::getJti();
         $key = self::hash($key);
-        Env::save(self::SECRET_KEY_FILE, ['secret' => $key]);
+        $settings['cryptoSecret'] = $key;
+
+        unlink(self::SECRET_KEY_FILE);
+        $content = "<?php\n\nreturn [\n\t\'cryptoSecret\' => \'{$key}\',\n];\n";
+        file_put_contents(self::SECRET_KEY_FILE, $content);
 
         return $key;
     }
